@@ -1,0 +1,101 @@
+import random
+import pygame as pg
+from settings import (
+    SCREEN_WIDTH, SCREEN_HEIGHT, FPS, WOLF_SPEED,
+    WHITE, GRAY, BLUE, ICON_PATH, BG_MUSIC_PATH, FONT_PATH, FONT_SIZE,
+)
+from world.level import Level
+from entities.player import Player
+from entities.wolf import Wolf
+
+
+class Game:
+    def __init__(self):
+        pg.init()
+        self.clock = pg.time.Clock()
+        self.screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pg.display.set_caption("History of Knight")
+        icon = pg.image.load(ICON_PATH).convert_alpha()
+        pg.display.set_icon(icon)
+
+        Wolf()
+
+        self.level = Level()
+        self.player = Player()
+
+        self.wolf_timer = pg.USEREVENT + 1
+        pg.time.set_timer(self.wolf_timer, random.randint(1000, 4000))
+        self.wolf_list_in_game = []
+        self.wolf_anim_count = 0
+
+        bg_sound = pg.mixer.Sound(BG_MUSIC_PATH)
+        bg_sound.play(-1)
+
+        self.label = pg.font.Font(FONT_PATH, FONT_SIZE)
+        self.label_lose = self.label.render("Вы проиграли!", False, WHITE)
+        self.restart_label = self.label.render("Начать заново", False, GRAY)
+        self.restart_label_rect = self.restart_label.get_rect(topleft=(150, 230))
+        self.gameplay = True
+
+        self.running = True
+
+    def run(self):
+        while self.running:
+            self.level.draw(self.screen)
+
+            if self.gameplay:
+                player_rect = self.player.get_rect()
+
+                if self.wolf_list_in_game:
+                    for index, rect in enumerate(self.wolf_list_in_game):
+                        rect.x -= WOLF_SPEED
+
+                        if rect.x < -10:
+                            self.wolf_list_in_game.pop(index)
+
+                        if player_rect.colliderect(rect):
+                            self.screen.blit(
+                                Wolf.wolf_attack[self.wolf_anim_count % len(Wolf.wolf_attack)],
+                                (rect.x, rect.y),
+                            )
+                            self.gameplay = False
+                        else:
+                            self.screen.blit(Wolf.wolf_run[self.wolf_anim_count], (rect.x, rect.y))
+
+                keys = pg.key.get_pressed()
+                self.player.draw(self.screen, keys)
+                self.player.update(keys)
+
+                if self.wolf_anim_count == len(Wolf.wolf_run) - 1:
+                    self.wolf_anim_count = 0
+                self.wolf_anim_count += 1
+
+                self.level.update()
+            else:
+                self.screen.fill(BLUE)
+                self.screen.blit(self.label_lose, (150, 130))
+                self.screen.blit(self.restart_label, self.restart_label_rect)
+
+                mouse = pg.mouse.get_pos()
+                if self.restart_label_rect.collidepoint(mouse) and pg.mouse.get_pressed()[0]:
+                    self.gameplay = True
+                    self.player.player_x = 150
+                    self.wolf_list_in_game.clear()
+
+            pg.display.update()
+
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    self.running = False
+                if event.type == self.wolf_timer:
+                    self.wolf_list_in_game.append(Wolf.wolf_run[0].get_rect(topleft=(744, 280)))
+                    pg.time.set_timer(self.wolf_timer, random.randint(1500, 4500))
+
+            self.clock.tick(FPS)
+
+        pg.quit()
+
+
+if __name__ == "__main__":
+    game = Game()
+    game.run()
