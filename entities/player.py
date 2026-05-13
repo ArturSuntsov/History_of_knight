@@ -44,4 +44,9 @@ class Player:
             screen.blit(self.run_right[self.player_anim_count], (self.player_x, self.player_y))
 
     def get_rect(self):
-        return self.run_left[0].get_rect(topleft=(self.player_x, self.player_y))
+        rect = self.run_left[0].get_rect(topleft=(self.player_x, self.player_y))
+        rect.x += 58
+        rect.width -= 120
+        rect.y += 53
+        rect.height -= 107
+        return rect

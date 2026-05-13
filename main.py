@@ -47,20 +47,25 @@ class Game:
                 player_rect = self.player.get_rect()
 
                 if self.wolf_list_in_game:
-                    for index, rect in enumerate(self.wolf_list_in_game):
-                        rect.x -= WOLF_SPEED
+                    for index in range(len(self.wolf_list_in_game) - 1, -1, -1):
+                        wolf = self.wolf_list_in_game[index]
 
-                        if rect.x < -10:
+                        wolf.update()
+
+                        if wolf.rect.x < -10:
                             self.wolf_list_in_game.pop(index)
+                            continue
 
-                        if player_rect.colliderect(rect):
+                        wolf_rect = wolf.get_rect()
+
+                        if player_rect.colliderect(wolf_rect):
                             self.screen.blit(
                                 Wolf.wolf_attack[self.wolf_anim_count % len(Wolf.wolf_attack)],
-                                (rect.x, rect.y),
+                                (wolf.rect.x, wolf.rect.y),
                             )
                             self.gameplay = False
                         else:
-                            self.screen.blit(Wolf.wolf_run[self.wolf_anim_count], (rect.x, rect.y))
+                            self.screen.blit(Wolf.wolf_run[self.wolf_anim_count], (wolf.rect.x, wolf.rect.y))
 
                 keys = pg.key.get_pressed()
                 self.player.draw(self.screen, keys)
@@ -88,7 +93,7 @@ class Game:
                 if event.type == pg.QUIT:
                     self.running = False
                 if event.type == self.wolf_timer:
-                    self.wolf_list_in_game.append(Wolf.wolf_run[0].get_rect(topleft=(744, 280)))
+                    self.wolf_list_in_game.append(Wolf())
                     pg.time.set_timer(self.wolf_timer, random.randint(1500, 4500))
 
             self.clock.tick(FPS)
