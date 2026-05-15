@@ -58,6 +58,10 @@ class Game:
 
                         wolf_rect = wolf.get_rect()
 
+                        if self.player.is_attacking and player_rect.colliderect(wolf_rect):
+                            self.wolf_list_in_game.pop(index)  
+                            continue
+
                         if player_rect.colliderect(wolf_rect):
                             self.screen.blit(
                                 Wolf.wolf_attack[self.wolf_anim_count % len(Wolf.wolf_attack)],
@@ -95,6 +99,9 @@ class Game:
                 if event.type == self.wolf_timer:
                     self.wolf_list_in_game.append(Wolf())
                     pg.time.set_timer(self.wolf_timer, random.randint(1500, 4500))
+                if event.type == pg.KEYDOWN and event.key == pg.K_f:
+                    if self.gameplay:
+                        self.player.attack()  
 
             self.clock.tick(FPS)
 

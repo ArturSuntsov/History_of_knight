@@ -22,3 +22,5 @@ PLAYER_LEFT_PATHS = (f"assets/images/Player/player_left/run ({i}).png" for i in 
 WOLF_RUN_PATHS = (f"assets/images/wolf/run/wolf ({i}).png" for i in [3, 2, 5, 1, 4, 6])
 
 WOLF_ATTACK_PATHS = (f"assets/images/wolf/attack/wolf ({i}).png" for i in range(7, 12))
+
+PLAYER_ATTACK_PATHS = (f"assets/images/Player/player_attack/attack ({i}).png" for i in range(1, 7))
