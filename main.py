@@ -22,6 +22,7 @@ class Game:
 
         self.level = Level()
         self.player = Player()
+        self.heart_image = pg.image.load("assets/images/heart.png").convert_alpha()
 
         self.wolf_timer = pg.USEREVENT + 1
         pg.time.set_timer(self.wolf_timer, random.randint(1000, 4000))
@@ -52,7 +53,7 @@ class Game:
 
                         wolf.update()
 
-                        if wolf.rect.x < -10:
+                        if wolf.rect.x < -100:
                             self.wolf_list_in_game.pop(index)
                             continue
 
@@ -63,11 +64,14 @@ class Game:
                             continue
 
                         if player_rect.colliderect(wolf_rect):
+                            if self.player.take_damage():
+                                if self.player.health <= 0:
+                                    self.gameplay = False
                             self.screen.blit(
                                 Wolf.wolf_attack[self.wolf_anim_count % len(Wolf.wolf_attack)],
                                 (wolf.rect.x, wolf.rect.y),
                             )
-                            self.gameplay = False
+
                         else:
                             self.screen.blit(Wolf.wolf_run[self.wolf_anim_count], (wolf.rect.x, wolf.rect.y))
 
@@ -90,6 +94,9 @@ class Game:
                     self.gameplay = True
                     self.player.player_x = 150
                     self.wolf_list_in_game.clear()
+            
+            for i in range(self.player.health):
+                self.screen.blit(self.heart_image, (10 + i * 40, 10))
 
             pg.display.update()
 
@@ -102,6 +109,7 @@ class Game:
                 if event.type == pg.KEYDOWN and event.key == pg.K_f:
                     if self.gameplay:
                         self.player.attack()  
+                
 
             self.clock.tick(FPS)
 
