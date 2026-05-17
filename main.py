@@ -24,6 +24,8 @@ class Game:
         self.player = Player()
         self.heart_image = pg.image.load("assets/images/heart.png").convert_alpha()
 
+        self.wolf_head = pg.image.load("assets/images/wolf_face.png").convert_alpha()
+        self.wolves_killed = 0
         self.wolf_timer = pg.USEREVENT + 1
         pg.time.set_timer(self.wolf_timer, random.randint(1000, 4000))
         self.wolf_list_in_game = []
@@ -60,6 +62,7 @@ class Game:
                         wolf_rect = wolf.get_rect()
 
                         if self.player.is_attacking and player_rect.colliderect(wolf_rect):
+                            self.wolves_killed += 1 
                             self.wolf_list_in_game.pop(index)  
                             continue
 
@@ -74,6 +77,12 @@ class Game:
 
                         else:
                             self.screen.blit(Wolf.wolf_run[self.wolf_anim_count], (wolf.rect.x, wolf.rect.y))
+
+                for i in range(self.player.health):
+                    self.screen.blit(self.heart_image, (10 + i * 40, 10))
+                self.screen.blit(self.wolf_head, (10, 70))  
+                score_text = self.label.render(str(self.wolves_killed), False, WHITE)
+                self.screen.blit(score_text, (70, 70)) 
 
                 keys = pg.key.get_pressed()
                 self.player.draw(self.screen, keys)
@@ -91,12 +100,14 @@ class Game:
 
                 mouse = pg.mouse.get_pos()
                 if self.restart_label_rect.collidepoint(mouse) and pg.mouse.get_pressed()[0]:
+                    self.wolves_killed = 0 
+                    self.player.health = 3
+                    self.player.invincible_timer = 0
+                    self.player.is_attacking = False  
+                    self.player.attack_cooldown = 0 
                     self.gameplay = True
                     self.player.player_x = 150
                     self.wolf_list_in_game.clear()
-            
-            for i in range(self.player.health):
-                self.screen.blit(self.heart_image, (10 + i * 40, 10))
 
             pg.display.update()
 
