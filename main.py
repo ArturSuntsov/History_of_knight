@@ -1,132 +1,101 @@
 import random
+
 import pygame as pg
+
+from core.game_state import GameState
+from core.input_handler import InputHandler
+from level import LevelModel, LevelView
+from player import PlayerView
 from settings import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, FPS, WOLF_SPEED,
-    WHITE, GRAY, BLUE, ICON_PATH, BG_MUSIC_PATH, FONT_PATH, FONT_SIZE,
+    BG_MUSIC_PATH,
+    FPS,
+    ICON_PATH,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WOLF_SPAWN_INITIAL_MAX,
+    WOLF_SPAWN_INITIAL_MIN,
+    WOLF_SPAWN_MAX_TIME,
+    WOLF_SPAWN_MIN_TIME,
 )
-from world.level import Level
-from entities.player import Player
-from entities.wolf import Wolf
+from ui import GameOverView, HUD
+from wolf import WolfView
 
 
 class Game:
+    """Контроллер: связывает модели, представления и ввод."""
+
     def __init__(self):
         pg.init()
         self.clock = pg.time.Clock()
         self.screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pg.display.set_caption("History of Knight")
-        icon = pg.image.load(ICON_PATH).convert_alpha()
-        pg.display.set_icon(icon)
+        pg.display.set_icon(pg.image.load(ICON_PATH).convert_alpha())
 
-        Wolf()
+        self.state = GameState()
+        self.level = LevelModel()
+        self.level_view = LevelView()
+        self.player_view = PlayerView()
+        self.wolf_view = WolfView()
+        self.hud = HUD()
+        self.game_over_view = GameOverView()
+        self.input_handler = InputHandler()
 
-        self.level = Level()
-        self.player = Player()
-        self.heart_image = pg.image.load("assets/images/heart.png").convert_alpha()
-
-        self.wolf_head = pg.image.load("assets/images/wolf_face.png").convert_alpha()
-        self.wolves_killed = 0
         self.wolf_timer = pg.USEREVENT + 1
-        pg.time.set_timer(self.wolf_timer, random.randint(1000, 4000))
-        self.wolf_list_in_game = []
-        self.wolf_anim_count = 0
+        pg.time.set_timer(
+            self.wolf_timer,
+            random.randint(WOLF_SPAWN_INITIAL_MIN, WOLF_SPAWN_INITIAL_MAX),
+        )
 
-        bg_sound = pg.mixer.Sound(BG_MUSIC_PATH)
-        bg_sound.play(-1)
-
-        self.label = pg.font.Font(FONT_PATH, FONT_SIZE)
-        self.label_lose = self.label.render("Вы проиграли!", False, WHITE)
-        self.restart_label = self.label.render("Начать заново", False, GRAY)
-        self.restart_label_rect = self.restart_label.get_rect(topleft=(150, 230))
-        self.gameplay = True
-
+        pg.mixer.Sound(BG_MUSIC_PATH).play(-1)
         self.running = True
+
+    def _spawn_wolf(self):
+        self.state.add_wolf()
+        pg.time.set_timer(
+            self.wolf_timer,
+            random.randint(WOLF_SPAWN_MIN_TIME, WOLF_SPAWN_MAX_TIME),
+        )
+
+    def _render_gameplay(self):
+        keys = self.input_handler.get_pressed_keys()
+        self.state.update_player(keys)
+        self.state.update_wolves()
+        self.state.advance_wolf_animation()
+
+        for wolf in self.state.wolves:
+            self.wolf_view.draw(self.screen, wolf, self.state.wolf_anim_frame)
+
+        self.hud.draw(self.screen, self.state.player.health, self.state.wolves_killed)
+        self.player_view.draw(self.screen, self.state.player, keys)
+        self.level.update()
+    
+    def quit_game(self):
+        self.running = False
 
     def run(self):
         while self.running:
-            self.level.draw(self.screen)
+            self.level_view.draw(self.screen, self.level)
 
-            if self.gameplay:
-                player_rect = self.player.get_rect()
-
-                if self.wolf_list_in_game:
-                    for index in range(len(self.wolf_list_in_game) - 1, -1, -1):
-                        wolf = self.wolf_list_in_game[index]
-
-                        wolf.update()
-
-                        if wolf.rect.x < -100:
-                            self.wolf_list_in_game.pop(index)
-                            continue
-
-                        wolf_rect = wolf.get_rect()
-
-                        if self.player.is_attacking and player_rect.colliderect(wolf_rect):
-                            self.wolves_killed += 1 
-                            self.wolf_list_in_game.pop(index)  
-                            continue
-
-                        if player_rect.colliderect(wolf_rect):
-                            if self.player.take_damage():
-                                if self.player.health <= 0:
-                                    self.gameplay = False
-                            self.screen.blit(
-                                Wolf.wolf_attack[self.wolf_anim_count % len(Wolf.wolf_attack)],
-                                (wolf.rect.x, wolf.rect.y),
-                            )
-
-                        else:
-                            self.screen.blit(Wolf.wolf_run[self.wolf_anim_count], (wolf.rect.x, wolf.rect.y))
-
-                for i in range(self.player.health):
-                    self.screen.blit(self.heart_image, (10 + i * 40, 10))
-                self.screen.blit(self.wolf_head, (10, 70))  
-                score_text = self.label.render(str(self.wolves_killed), False, WHITE)
-                self.screen.blit(score_text, (70, 70)) 
-
-                keys = pg.key.get_pressed()
-                self.player.draw(self.screen, keys)
-                self.player.update(keys)
-
-                if self.wolf_anim_count == len(Wolf.wolf_run) - 1:
-                    self.wolf_anim_count = 0
-                self.wolf_anim_count += 1
-
-                self.level.update()
+            if self.state.gameplay:
+                self._render_gameplay()
             else:
-                self.screen.fill(BLUE)
-                self.screen.blit(self.label_lose, (150, 130))
-                self.screen.blit(self.restart_label, self.restart_label_rect)
-
-                mouse = pg.mouse.get_pos()
-                if self.restart_label_rect.collidepoint(mouse) and pg.mouse.get_pressed()[0]:
-                    self.wolves_killed = 0 
-                    self.player.health = 3
-                    self.player.invincible_timer = 0
-                    self.player.is_attacking = False  
-                    self.player.attack_cooldown = 0 
-                    self.gameplay = True
-                    self.player.player_x = 150
-                    self.wolf_list_in_game.clear()
+                self.game_over_view.draw(self.screen, self.state.wolves_killed)
+                if self.input_handler.is_mouse_clicked(self.game_over_view.restart_rect):
+                    self.state.reset()
+                    self.level.reset()
 
             pg.display.update()
-
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    self.running = False
-                if event.type == self.wolf_timer:
-                    self.wolf_list_in_game.append(Wolf())
-                    pg.time.set_timer(self.wolf_timer, random.randint(1500, 4500))
-                if event.type == pg.KEYDOWN and event.key == pg.K_f:
-                    if self.gameplay:
-                        self.player.attack()  
-                
-
+            self.input_handler.process_events(
+                self.wolf_timer,
+                self.state.gameplay,
+                on_quit=self.quit_game,
+                on_spawn_wolf=self._spawn_wolf,
+                on_attack=self.state.player.attack,
+            )
             self.clock.tick(FPS)
 
         pg.quit()
 
 
 if __name__ == "__main__":
-    game = Game()
-    game.run()
+    Game().run()
