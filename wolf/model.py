@@ -16,7 +16,7 @@ from settings import (
 
 
 class WolfModel:
-    """Состояние и движение волка без отрисовки."""
+    """Состояние и движение волка."""
 
     def __init__(self):
         self.x = WOLF_SPAWN_X

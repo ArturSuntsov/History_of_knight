@@ -22,7 +22,7 @@ from settings import (
 
 
 class PlayerModel:
-    """Состояние и логика игрока без отрисовки."""
+    """Состояние и логика игрока."""
 
     ATTACK_FRAME_COUNT = 6
     RUN_FRAME_COUNT = 8
