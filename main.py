@@ -14,8 +14,6 @@ from settings import (
     SCREEN_WIDTH,
     WOLF_SPAWN_INITIAL_MAX,
     WOLF_SPAWN_INITIAL_MIN,
-    WOLF_SPAWN_MAX_TIME,
-    WOLF_SPAWN_MIN_TIME,
 )
 from ui import GameOverView, HUD
 from wolf import WolfView
@@ -53,7 +51,7 @@ class Game:
         self.state.add_wolf()
         pg.time.set_timer(
             self.wolf_timer,
-            random.randint(WOLF_SPAWN_MIN_TIME, WOLF_SPAWN_MAX_TIME),
+            self.state.difficulty_manager.get_spawn_delay(),
         )
 
     def _render_gameplay(self):
@@ -68,7 +66,7 @@ class Game:
         self.hud.draw(self.screen, self.state.player.health, self.state.wolves_killed)
         self.player_view.draw(self.screen, self.state.player, keys)
         self.level.update()
-    
+
     def quit_game(self):
         self.running = False
 
