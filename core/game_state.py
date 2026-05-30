@@ -51,7 +51,6 @@ class GameState:
                     player_died = True
                 wolf.attacking = True
 
-        self.difficulty_manager.update()
         if player_died:
             self.difficulty_manager.on_player_died()
 

@@ -1,15 +1,15 @@
 import random
 
 from settings import (
+    DIFFICULTY_DECREASE_STEP,
+    DIFFICULTY_INCREASE_STEP,
     DIFFICULTY_MAX,
     DIFFICULTY_MIN,
+    DIFFICULTY_DEATH_THRESHOLD,
+    DIFFICULTY_WOLF_THRESHOLD,
     WOLF_SPEED,
     WOLF_SPAWN_MAX_TIME,
     WOLF_SPAWN_MIN_TIME,
-    DIFFICULTY_DECREASE_STEP,
-    DIFFICULTY_INCREASE_STEP,
-    DIFFICULTY_DEATH_THRESHOLD,
-    DIFFICULTY_WOLF_THRESHOLD,
 )
 
 
@@ -19,10 +19,6 @@ class DifficultyManager:
     def __init__(self):
         self.difficulty_multiplier = 1.0
         self.wolves_killed_this_run = 0
-        self.frames_survived = 0
-
-    def update(self):
-        self.frames_survived += 1
 
     def on_wolf_killed(self):
         self.wolves_killed_this_run += 1
@@ -35,7 +31,6 @@ class DifficultyManager:
 
     def reset_for_new_run(self):
         self.wolves_killed_this_run = 0
-        self.frames_survived = 0
 
     def get_wolf_speed(self):
         return WOLF_SPEED * self.difficulty_multiplier
